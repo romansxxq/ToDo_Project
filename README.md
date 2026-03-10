@@ -2,87 +2,104 @@
 
 ```mermaid
 flowchart TB
- subgraph subGraph0["Factory Pattern"]
-        TaskFactory["&lt;&gt;<br>TaskFactory"]
-        RepeatingTaskFactory["RepeatingTaskFactory"]
-        OneTimeTaskFactory["OneTimeTaskFactory"]
-        RepeatingTask["RepeatingTask"]
-        OneTimeTask["OneTimeTask"]
+ subgraph Factory["Factory Pattern"]
+        TaskFactory["<> <br> TaskFactory <br> ───────────── <br> CreateTask()"]
   end
- subgraph subGraph1["Strategy Pattern"]
-        IRepetition["&lt;&gt;<br>IRepetitionStrategy"]
-        IDailyRepetition["DailyRepetition<br>GetNextExecutionDate+1d"]
-        IWeeklyRepetition["WeeklyRepetition<br>GetNextExecutionDate+7d"]
-        IMonthlyRepetition["MonthlyRepetition<br>GetNextExecutionDate+30d"]
-        INotification["&lt;&gt;<br>INotificationStrategy"]
-        SMSNotif["TelegramNotification<br>Notify"]
+
+ subgraph Strategy["Strategy Pattern"]
+        IRepetition["<> <br> IRepetitionStrategy <br> ───────────── <br> GetNextExecutionDate()"]
+        NoRepetition["NoRepetitionStrategy <br> return null"]
+        DailyRepetition["DailyRepetition <br> +1 day"]
+        WeeklyRepetition["WeeklyRepetition <br> +7 days"]
+        MonthlyRepetition["MonthlyRepetition <br> +30 days"]
+
+        INotification["<> <br> INotificationStrategy <br> ───────────── <br> Notify()"]
+        TelegramNotif["TelegramNotification <br> Notify()"]
   end
- subgraph subGraph2["Observer Pattern"]
-        ITaskObserver["&lt;&gt;<br>ITaskObserver<br>OnTaskReminder()<br>OnTaskCompleted()"]
+
+ subgraph Observer["Observer Pattern"]
+        ITaskObserver["<> <br> ITaskObserver <br> ───────────── <br> OnTaskReminder() <br> OnTaskCompleted()"]
         NotifObserver["NotificationObserver"]
         LoggerObserver["LoggerObserver"]
         AnalyticsObserver["AnalyticsObserver"]
   end
- subgraph subGraph3["Domain Model"]
-        BaseTask["&lt;&gt;<br>Task<br>─────────────<br>Id: int<br>Title: string<br>IsCompleted: bool<br>Priority: Priority<br>─────────────<br>Subscribe()<br>NotifyReminder()<br>Complete()"]
-        List["List&lt;ITaskObserver&gt;"]
+
+ subgraph Domain["Domain Model"]
+        Task["Task <br> ───────────── <br> Id: int <br> Title: string <br> Description: string <br> DueDate: DateTime <br> IsCompleted: bool <br> Priority: Priority <br> RepetitionStrategy: IRepetitionStrategy <br> NotificationStrategies: List&lt;INotificationStrategy&gt; <br> Observers: List&lt;ITaskObserver&gt; <br> ───────────── <br> Subscribe() <br> NotifyReminder() <br> Complete()"]
+        Reminder["Reminder <br> ───────────── <br> Id: int <br> RemindAt: DateTime <br> IsSent: bool"]
   end
- subgraph subGraph4["Repository Pattern"]
-        ITaskRepository["&lt;&gt;<br>ITaskRepository<br>─────────────<br>GetAllAsync()<br>GetByIdAsync()<br>AddAsync()<br>UpdateAsync()<br>DeleteAsync()<br>GetByPriorityAsync()"]
-        TaskRepository["TaskRepository<br>─────────────<br>EF Core Implementation"]
+
+ subgraph Repository["Repository Pattern"]
+        ITaskRepository["<> <br> ITaskRepository <br> ───────────── <br> GetAllAsync() <br> GetByIdAsync() <br> AddAsync() <br> UpdateAsync() <br> DeleteAsync() <br> GetByPriorityAsync()"]
+        TaskRepository["TaskRepository <br> ───────────── <br> EF Core Implementation"]
         DbContext["TodoDbContext"]
   end
- subgraph Database["Database"]
-        DB[("Database<br>Tasks Table<br>Tags Table<br>Reminders Table")]
-  end
+
  subgraph Services["Services"]
-        TaskService["TaskService<br>─────────────<br>CreateRepeatingTask()<br>CompleteTask()<br>UpdateTask()<br>DeleteTask()"]
-        NotificationService["NotificationService<br>─────────────<br>SendAsync()"]
-        TaskScheduler["TaskScheduler<br>─────────────<br>ScheduleReminder()<br>ExecuteReminders()"]
+        TaskService["TaskService <br> ───────────── <br> CreateTask() <br> CompleteTask() <br> UpdateTask() <br> DeleteTask()"]
+        NotificationService["NotificationService <br> ───────────── <br> SendAsync()"]
+        AnalyticsService["AnalyticsService <br> ───────────── <br> IncrementCompletedTasks() <br> IncrementOverdueTasks() <br> IncrementReminderCount()"]
+        LogService["ILogService / ILogger <br> ───────────── <br> LogInfo() <br> LogWarning()"]
+        TaskScheduler["TaskScheduler <br> ───────────── <br> ScheduleReminder() <br> ExecuteReminders()"]
   end
-    TaskFactory -- creates --> RepeatingTask & OneTimeTask
-    RepeatingTaskFactory -. implements .-> TaskFactory
-    OneTimeTaskFactory -. implements .-> TaskFactory
-    IDailyRepetition -. implements .-> IRepetition
-    IWeeklyRepetition -. implements .-> IRepetition
-    IMonthlyRepetition -. implements .-> IRepetition
-    SMSNotif -. implements .-> INotification
+
+ subgraph Database["Database"]
+        DB[("Database <br> Tasks Table <br> Reminders Table")]
+  end
+
+    NoRepetition -. implements .-> IRepetition
+    DailyRepetition -. implements .-> IRepetition
+    WeeklyRepetition -. implements .-> IRepetition
+    MonthlyRepetition -. implements .-> IRepetition
+
+    TelegramNotif -. implements .-> INotification
+
     NotifObserver -. implements .-> ITaskObserver
     LoggerObserver -. implements .-> ITaskObserver
     AnalyticsObserver -. implements .-> ITaskObserver
-    RepeatingTask -- extends --> BaseTask
-    OneTimeTask -- extends --> BaseTask
-    BaseTask -- has --> IRepetition & List
-    List -- contains --> ITaskObserver
+
+    Task -- has --> IRepetition
+    Task -- has many --> INotification
+    Task -- has many --> ITaskObserver
+    Task -- has many --> Reminder
+
+    TaskFactory -- creates --> Task
+
     ITaskRepository -- implemented by --> TaskRepository
     TaskRepository -- uses --> DbContext
     DbContext -- queries --> DB
-    BaseTask -- uses --> INotification
-    TaskService -- uses --> ITaskRepository & TaskFactory
+
+    TaskService -- uses --> ITaskRepository
+    TaskService -- uses --> TaskFactory
+
     NotificationService -- uses --> INotification
     TaskScheduler -- uses --> TaskService
-    TaskScheduler -- monitors --> BaseTask
+    TaskScheduler -- checks --> Reminder
+
+    NotifObserver -- uses --> NotificationService
+    LoggerObserver -- uses --> LogService
+    AnalyticsObserver -- uses --> AnalyticsService
 
     style TaskFactory fill:#e1f5ff
-    style RepeatingTaskFactory fill:#b3e5fc
-    style OneTimeTaskFactory fill:#b3e5fc
-    style RepeatingTask fill:#ffe0b2
-    style OneTimeTask fill:#ffe0b2
     style IRepetition fill:#f3e5f5
-    style IDailyRepetition fill:#ede7f6
-    style IWeeklyRepetition fill:#ede7f6
-    style IMonthlyRepetition fill:#ede7f6
+    style NoRepetition fill:#ede7f6
+    style DailyRepetition fill:#ede7f6
+    style WeeklyRepetition fill:#ede7f6
+    style MonthlyRepetition fill:#ede7f6
     style INotification fill:#f3e5f5
-    style SMSNotif fill:#ede7f6
+    style TelegramNotif fill:#ede7f6
     style ITaskObserver fill:#e8f5e9
     style NotifObserver fill:#c8e6c9
     style LoggerObserver fill:#c8e6c9
     style AnalyticsObserver fill:#c8e6c9
-    style BaseTask fill:#fff3e0
+    style Task fill:#fff3e0
+    style Reminder fill:#fff3e0
     style ITaskRepository fill:#fce4ec
     style TaskRepository fill:#f8bbd0
     style DB fill:#ff6f00
     style TaskService fill:#c8e6c9
     style NotificationService fill:#c8e6c9
+    style AnalyticsService fill:#c8e6c9
+    style LogService fill:#c8e6c9
     style TaskScheduler fill:#c8e6c9
 ```
