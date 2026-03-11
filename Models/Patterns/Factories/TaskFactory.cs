@@ -1,11 +1,24 @@
 using Models.Domain.Entities;
 using Models.Domain.Enums;
+using Models.Domain.Observers;
 using Models.Domain.Patterns.Strategies;
+using Models.Domain.Patterns.Strategies.Notifications;
 
 namespace Models.Domain.Patterns.Factories;
 
 public class TaskFactory
 {
+    private readonly IEnumerable<ITaskObserver> _observers;
+    private readonly IEnumerable<INotificationStrategy> _notificationStrategies;
+
+    public TaskFactory(
+        IEnumerable<ITaskObserver> observers,
+        IEnumerable<INotificationStrategy> notificationStrategies)
+    {
+        _observers = observers;
+        _notificationStrategies = notificationStrategies;
+    }
+
     public TaskItem CreateTask(
         string title,
         string description,
@@ -24,14 +37,22 @@ public class TaskFactory
             RepetitionType = repetitionType,
             TelegramChatId = telegramChatId
         };
-        task.RepetitionStrategy = CreateRepetitionStrategy(repetitionType);
+        
+        RestoreBehaviors(task);
         return task;
     }
+    
     public void RestoreBehaviors(TaskItem task)
     {
         if (task == null) return;
         
         task.RepetitionStrategy = CreateRepetitionStrategy(task.RepetitionType);
+        task.NotificationStrategies = _notificationStrategies.ToList();
+        
+        foreach (var observer in _observers)
+        {
+            task.Subscribe(observer);
+        }
     }
     private IRepetitionStrategy CreateRepetitionStrategy(RepetitionType type)
     {

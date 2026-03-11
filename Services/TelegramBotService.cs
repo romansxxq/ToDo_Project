@@ -1,32 +1,23 @@
 using Telegram.Bot;
-using ToDo_Project.Models.Domain.Entities;
-using ToDo_Project.Models.Domain.Patterns.Observers;
 
-namespace ToDo_Project.Services;
+namespace Services;
 
-public class TelegramBotService : ITaskObserver
+public class TelegramBotService
 {
     private readonly TelegramBotClient _botClient;
-    private readonly string _chatId;
 
-    public TelegramBotService(string botToken, string chatId)
+    public TelegramBotService(string botToken)
     {
         _botClient = new TelegramBotClient(botToken);
-        _chatId = chatId;
     }
 
-    public async void OnTaskReminder(TaskItem task, Reminder reminder)
+    public async Task SendMessageAsync(long chatId, string message, CancellationToken cancellationToken = default)
     {
-        if (!reminder.IsSent)
+        if (chatId <= 0 || string.IsNullOrWhiteSpace(message))
         {
-            string message = $"Reminder: Task '{task.Title}' is due at {reminder.RemindAt}.";
-            await _botClient.SendTextMessageAsync(_chatId, message);
-            reminder.IsSent = true; // Mark the reminder as sent
+            return;
         }
-    }
 
-    public void OnTaskCompleted(TaskItem task)
-    {
-        // Handle task completion if needed
+        await _botClient.SendMessage(chatId, message, cancellationToken: cancellationToken);
     }
 }

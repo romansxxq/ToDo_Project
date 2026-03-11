@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Models.Domain.Enums;
 using Models.Domain.Observers;
 using Models.Domain.Patterns.Strategies;
+using Models.Domain.Patterns.Strategies.Notifications;
 using TaskStatus = Models.Domain.Enums.TaskStatus;
 
 namespace Models.Domain.Entities;
@@ -23,6 +24,9 @@ public Guid Id { get; set; }
     
     [NotMapped]
     public IRepetitionStrategy? RepetitionStrategy { get; set; }
+    
+    [NotMapped]
+    public List<INotificationStrategy> NotificationStrategies { get; set; } = new();
 
     [NotMapped]
     private readonly List<ITaskObserver> _observers = new();
