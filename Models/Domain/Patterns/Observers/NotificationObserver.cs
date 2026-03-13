@@ -20,9 +20,10 @@ public class NotificationObserver : ITaskObserver
 
     public void OnTaskReminder(TaskItem task, Reminder reminder)
     {
+        var displayTime = reminder.RemindAt.ToUniversalTime().AddHours(2);
         _ = _notificationService.SendAsync(
             task.Id,
-            $"Reminder for task: {task.Title}. Time: {reminder.RemindAt:yyyy-MM-dd HH:mm}",
+            $"Reminder for task: {task.Title}. Time (GMT+2): {displayTime:yyyy-MM-dd HH:mm}",
             task.TelegramChatId);
     }
 }
