@@ -1,0 +1,65 @@
+@model ToDo_Project.Models.ViewModels.TaskFormViewModel
+
+@{
+    ViewData["Title"] = "Edit Task";
+    ViewData["BodyClass"] = "tasks";
+}
+
+<div class="tasks-page">
+    <section class="hero hero-compact">
+        <div class="hero-overlay"></div>
+        <div class="hero-inner">
+            <div class="hero-title">Edit Task</div>
+            <div class="hero-subtitle">Update details and reminders</div>
+        </div>
+    </section>
+
+    <section class="todo-shell tasks-shell">
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post" class="form-card">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="DueDate" class="form-label">Due date (GMT+2)</label>
+        <input asp-for="DueDate" type="datetime-local" value="@DateTime.SpecifyKind(Model.DueDate, DateTimeKind.Utc).AddHours(2).ToString("yyyy-MM-ddTHH:mm")" class="form-control" />
+        <span asp-validation-for="DueDate" class="text-danger"></span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="Priority" class="form-label"></label>
+            <select asp-for="Priority" asp-items="Model.PriorityOptions" class="form-select"></select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label asp-for="RepetitionType" class="form-label">Repetition</label>
+            <select asp-for="RepetitionType" asp-items="Model.RepetitionOptions" class="form-select"></select>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="TelegramChatId" class="form-label">Telegram Chat ID</label>
+        <input asp-for="TelegramChatId" class="form-control" />
+    </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" type="submit">Save</button>
+                <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+            </div>
+        </form>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

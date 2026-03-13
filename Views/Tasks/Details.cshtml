@@ -1,0 +1,48 @@
+@model Models.Domain.Entities.TaskItem
+
+@{
+    ViewData["Title"] = "Task Details";
+    ViewData["BodyClass"] = "tasks";
+}
+
+<div class="tasks-page">
+    <section class="hero hero-compact">
+        <div class="hero-overlay"></div>
+        <div class="hero-inner">
+            <div class="hero-title">Task Details</div>
+            <div class="hero-subtitle">@Model.Title</div>
+        </div>
+    </section>
+
+    <section class="todo-shell tasks-shell">
+        <div class="form-card">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Title</dt>
+                <dd class="col-sm-9">@Model.Title</dd>
+
+                <dt class="col-sm-3">Description</dt>
+                <dd class="col-sm-9">@Model.Description</dd>
+
+                <dt class="col-sm-3">Due date (GMT+2)</dt>
+                <dd class="col-sm-9">@DateTime.SpecifyKind(Model.DueDate, DateTimeKind.Utc).AddHours(2).ToString("yyyy-MM-dd HH:mm")</dd>
+
+                <dt class="col-sm-3">Status</dt>
+                <dd class="col-sm-9">@Model.Status</dd>
+
+                <dt class="col-sm-3">Priority</dt>
+                <dd class="col-sm-9">@Model.Priority</dd>
+
+                <dt class="col-sm-3">Repetition</dt>
+                <dd class="col-sm-9">@Model.RepetitionType</dd>
+
+                <dt class="col-sm-3">Telegram Chat ID</dt>
+                <dd class="col-sm-9">@Model.TelegramChatId</dd>
+            </dl>
+
+            <div class="mt-3 d-flex gap-2">
+                <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+                <a class="btn btn-outline-secondary" asp-action="Index">Back to list</a>
+            </div>
+        </div>
+    </section>
+</div>

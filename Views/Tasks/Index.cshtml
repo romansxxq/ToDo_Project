@@ -1,0 +1,96 @@
+@{
+    ViewData["Title"] = "Todo App";
+    ViewData["BodyClass"] = "home";
+}
+
+<div class="todo-page">
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-inner">
+            <div class="hero-analytics">
+                <div class="analytics-card">
+                    <div class="analytics-title">Analytics</div>
+                    <div class="analytics-metrics">
+                        <div class="metric">
+                            <span class="metric-value" id="analytics-completed">0</span>
+                            <span class="metric-label">Completed</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value" id="analytics-overdue">0</span>
+                            <span class="metric-label">Overdue</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-title">Todo App</div>
+            <div class="hero-subtitle">Plan. Track. Finish.</div>
+        </div>
+    </section>
+
+    <section class="todo-shell">
+        <div class="todo-header">
+            <div>
+                <h2>Tasks</h2>
+                <div class="task-meta">Set a default Telegram Chat ID for new tasks.</div>
+            </div>
+            <div class="task-actions">
+                <input id="global-chat-id" class="form-control" type="number" placeholder="Telegram Chat ID" />
+                <a class="btn-add" asp-action="Create">+ Create Task</a>
+                <button class="btn-add btn-add-secondary" id="toggle-test-panel" type="button">Test Notifications</button>
+            </div>
+        </div>
+
+        <div class="tabs" role="tablist">
+            <button class="tab active" type="button" data-filter="today">Today</button>
+            <button class="tab" type="button" data-filter="pending">Pending</button>
+            <button class="tab" type="button" data-filter="overdue">Overdue</button>
+        </div>
+
+        <div class="todo-body">
+            <div class="task-list" id="task-list"></div>
+
+            <aside class="test-panel hidden" id="test-panel" aria-hidden="true">
+                <div class="test-panel-header">
+                    <h3>Notification Test</h3>
+                    <p>Create a task to verify Telegram notifications.</p>
+                </div>
+                <form id="test-todo-form" class="test-form">
+                    <label for="todo-title">Title</label>
+                    <input id="todo-title" type="text" placeholder="Example task" required />
+
+                    <label for="todo-description">Description</label>
+                    <textarea id="todo-description" rows="3" placeholder="What should be done?"></textarea>
+
+                    <label for="todo-due">Due date (GMT+2)</label>
+                    <input id="todo-due" type="datetime-local" required />
+
+                    <label for="todo-priority">Priority</label>
+                    <select id="todo-priority">
+                        <option value="0">Low</option>
+                        <option value="1" selected>Medium</option>
+                        <option value="2">High</option>
+                    </select>
+
+                    <label for="todo-repetition">Repetition</label>
+                    <select id="todo-repetition">
+                        <option value="0" selected>None</option>
+                        <option value="1">Daily</option>
+                        <option value="2">Weekly</option>
+                        <option value="3">Monthly</option>
+                    </select>
+
+                    <label for="todo-chat">Telegram Chat ID</label>
+                    <input id="todo-chat" type="number" placeholder="123456789" required />
+
+                    <button class="btn-submit" type="submit">Create test task</button>
+                </form>
+                <pre id="test-todo-result">Submit the form to see response...</pre>
+            </aside>
+        </div>
+
+        <div class="completed-section">
+            <div class="completed-header">Completed</div>
+            <div class="task-list completed" id="completed-list"></div>
+        </div>
+    </section>
+</div>

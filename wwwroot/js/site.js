@@ -13,11 +13,40 @@ document.addEventListener("DOMContentLoaded", () => {
 	const tabs = document.querySelectorAll(".tab");
 	const togglePanel = document.getElementById("toggle-test-panel");
 	const testPanel = document.getElementById("test-panel");
+	const globalChatId = document.getElementById("global-chat-id");
+	const createChatId = document.getElementById("create-chat-id");
+	const chatIdHint = document.getElementById("chat-id-hint");
 
 	if (dueInput && !dueInput.value) {
 		const now = new Date();
 		now.setHours(now.getHours() + 2);
 		dueInput.value = now.toISOString().slice(0, 16);
+	}
+
+	if (globalChatId) {
+		const savedChatId = window.localStorage.getItem("todoChatId");
+		if (savedChatId) {
+			globalChatId.value = savedChatId;
+		}
+		globalChatId.addEventListener("input", () => {
+			if (globalChatId.value) {
+				window.localStorage.setItem("todoChatId", globalChatId.value);
+			} else {
+				window.localStorage.removeItem("todoChatId");
+			}
+		});
+	}
+
+	if (createChatId) {
+		const savedChatId = window.localStorage.getItem("todoChatId");
+		if (savedChatId) {
+			createChatId.value = savedChatId;
+			if (chatIdHint) {
+				chatIdHint.textContent = "Using the saved Telegram Chat ID.";
+			}
+		} else if (chatIdHint) {
+			chatIdHint.textContent = "No Telegram Chat ID saved yet. Set it on the Tasks page.";
+		}
 	}
 
 	const state = {
@@ -30,7 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			return "";
 		}
 		const date = new Date(value);
-		return date.toLocaleDateString(undefined, {
+		const gmt2 = new Date(date.getTime() + 2 * 60 * 60 * 1000);
+		return gmt2.toLocaleDateString(undefined, {
 			month: "short",
 			day: "numeric",
 			year: "numeric"
@@ -112,20 +142,25 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (activeTasks.length === 0) {
 			renderEmpty(taskList, "No tasks for this view yet.");
 		} else {
-			taskList.innerHTML = activeTasks
-				.map(
-					(task) => `
-					<div class="task-card">
-						<input class="task-check" type="checkbox" data-id="${task.id}" ${isCompleted(task) ? "checked" : ""} />
-						<div>
-							<div class="task-title">${task.title}</div>
-							<div class="task-meta">${formatDate(task.dueDate)}</div>
-						</div>
-						<div class="task-meta">${task.description || ""}</div>
-						<div class="task-pill ${priorityClass(task.priority)}"></div>
-					</div>`
-				)
-				.join("");
+				taskList.innerHTML = activeTasks
+					.map(
+						(task) => `
+						<div class="task-card">
+							<input class="task-check" type="checkbox" data-id="${task.id}" ${isCompleted(task) ? "checked" : ""} />
+							<div>
+								<div class="task-title">${task.title}</div>
+								<div class="task-meta">${formatDate(task.dueDate)}</div>
+							</div>
+							<div class="task-meta">${task.description || ""}</div>
+							<div class="task-actions">
+								<a class="task-link" href="/Tasks/Details/${task.id}">Details</a>
+								<a class="task-link" href="/Tasks/Edit/${task.id}">Edit</a>
+								<button class="task-delete" type="button" data-id="${task.id}">Delete</button>
+							</div>
+							<div class="task-pill ${priorityClass(task.priority)}"></div>
+						</div>`
+					)
+					.join("");
 		}
 
 		if (doneTasks.length === 0) {
@@ -141,6 +176,11 @@ document.addEventListener("DOMContentLoaded", () => {
 							<div class="task-meta">${formatDate(task.dueDate)}</div>
 						</div>
 						<div class="task-meta">${task.description || ""}</div>
+						<div class="task-actions">
+							<a class="task-link" href="/Tasks/Details/${task.id}">Details</a>
+							<a class="task-link" href="/Tasks/Edit/${task.id}">Edit</a>
+							<button class="task-delete" type="button" data-id="${task.id}">Delete</button>
+						</div>
 						<div class="task-pill ${priorityClass(task.priority)}"></div>
 					</div>`
 				)
@@ -157,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const loadTasks = async () => {
 		try {
-			const response = await fetch("/tasks");
+			const response = await fetch("/api/tasks");
 			if (!response.ok) {
 				throw new Error(`Failed to load tasks (${response.status}).`);
 			}
@@ -182,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		try {
-			const response = await fetch(`/tasks/${target.dataset.id}/complete`, {
+			const response = await fetch(`/api/tasks/${target.dataset.id}/complete`, {
 				method: "POST"
 			});
 			if (!response.ok) {
@@ -191,6 +231,30 @@ document.addEventListener("DOMContentLoaded", () => {
 			await loadTasks();
 		} catch (error) {
 			target.checked = false;
+		}
+	};
+
+	const handleDelete = async (event) => {
+		const target = event.target;
+		if (!target.classList.contains("task-delete") || !target.dataset.id) {
+			return;
+		}
+
+		const confirmed = window.confirm("Delete this task?");
+		if (!confirmed) {
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/tasks/${target.dataset.id}`, {
+				method: "DELETE"
+			});
+			if (!response.ok) {
+				throw new Error("Delete failed.");
+			}
+			await loadTasks();
+		} catch (error) {
+			window.alert("Failed to delete task.");
 		}
 	};
 
@@ -207,6 +271,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	if (taskList) {
 		taskList.addEventListener("change", handleComplete);
+		taskList.addEventListener("click", handleDelete);
+	}
+
+	if (completedList) {
+		completedList.addEventListener("click", handleDelete);
 	}
 
 	if (togglePanel && testPanel) {
@@ -223,21 +292,30 @@ document.addEventListener("DOMContentLoaded", () => {
 		form.addEventListener("submit", async (event) => {
 			event.preventDefault();
 
+			const chatIdValue = document.getElementById("todo-chat").value.trim();
+			const fallbackChatId = globalChatId ? globalChatId.value.trim() : "";
 			const payload = {
 				title: document.getElementById("todo-title").value.trim(),
 				description: document.getElementById("todo-description").value.trim(),
 				dueDate: new Date(document.getElementById("todo-due").value).toISOString(),
 				priority: Number(document.getElementById("todo-priority").value),
 				repetitionType: Number(document.getElementById("todo-repetition").value),
-				telegramChatId: Number(document.getElementById("todo-chat").value)
+				telegramChatId: Number(chatIdValue || fallbackChatId)
 			};
 
 			if (resultBox) {
 				resultBox.textContent = "Sending...";
 			}
 
+			if (!payload.telegramChatId) {
+				if (resultBox) {
+					resultBox.textContent = "Telegram Chat ID is required.";
+				}
+				return;
+			}
+
 			try {
-				const response = await fetch("/tasks", {
+				const response = await fetch("/api/tasks", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify(payload)
