@@ -60,7 +60,8 @@ public class TasksController : Controller
             model.RepetitionType,
             model.TelegramChatId);
 
-        return RedirectToAction(nameof(Details), new { id = task.Id });
+        TempData["AlertMessage"] = $"Task '{task.Title}' created.";
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
