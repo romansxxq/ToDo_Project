@@ -181,9 +181,11 @@ body {
 
 .todo-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 18px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .todo-header h2 {
@@ -273,6 +275,12 @@ body {
   font-weight: 600;
 }
 
+.task-card-completed .task-title,
+.task-card-completed .task-meta {
+  text-decoration: line-through;
+  color: #8c9a8f;
+}
+
 .task-meta {
   font-size: 0.85rem;
   color: #6c7a6e;
@@ -286,6 +294,9 @@ body {
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: 6px;
 }
 
 .task-actions .form-control {
@@ -293,6 +304,7 @@ body {
   height: 38px;
   border-radius: 999px;
 }
+
 
 .task-actions .btn-ghost {
   border: 1px solid rgba(41, 77, 53, 0.25);

@@ -4,6 +4,14 @@
 }
 
 <div class="todo-page">
+    @if (TempData["AlertMessage"] is string alertMessage)
+    {
+        <script>
+            window.addEventListener("DOMContentLoaded", () => {
+                window.alert("@alertMessage");
+            });
+        </script>
+    }
     <section class="hero">
         <div class="hero-overlay"></div>
         <div class="hero-inner">
@@ -36,7 +44,6 @@
             <div class="task-actions">
                 <input id="global-chat-id" class="form-control" type="number" placeholder="Telegram Chat ID" />
                 <a class="btn-add" asp-action="Create">+ Create Task</a>
-                <button class="btn-add btn-add-secondary" id="toggle-test-panel" type="button">Test Notifications</button>
             </div>
         </div>
 

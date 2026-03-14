@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	const completedCount = document.getElementById("analytics-completed");
 	const overdueCount = document.getElementById("analytics-overdue");
 	const tabs = document.querySelectorAll(".tab");
-	const togglePanel = document.getElementById("toggle-test-panel");
 	const testPanel = document.getElementById("test-panel");
 	const globalChatId = document.getElementById("global-chat-id");
 	const createChatId = document.getElementById("create-chat-id");
@@ -54,16 +53,25 @@ document.addEventListener("DOMContentLoaded", () => {
 		tasks: []
 	};
 
+	const showAlert = (message) => {
+		if (!message) {
+			return;
+		}
+		window.alert(message);
+	};
+
 	const formatDate = (value) => {
 		if (!value) {
 			return "";
 		}
 		const date = new Date(value);
 		const gmt2 = new Date(date.getTime() + 2 * 60 * 60 * 1000);
-		return gmt2.toLocaleDateString(undefined, {
+		return gmt2.toLocaleString(undefined, {
 			month: "short",
 			day: "numeric",
-			year: "numeric"
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit"
 		});
 	};
 
@@ -145,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				taskList.innerHTML = activeTasks
 					.map(
 						(task) => `
-						<div class="task-card">
+						<div class="task-card ${isCompleted(task) ? "task-card-completed" : ""}">
 							<input class="task-check" type="checkbox" data-id="${task.id}" ${isCompleted(task) ? "checked" : ""} />
 							<div>
 								<div class="task-title">${task.title}</div>
@@ -169,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			completedList.innerHTML = doneTasks
 				.map(
 					(task) => `
-					<div class="task-card">
+					<div class="task-card task-card-completed">
 						<input class="task-check" type="checkbox" checked disabled />
 						<div>
 							<div class="task-title">${task.title}</div>
@@ -229,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				throw new Error("Complete failed.");
 			}
 			await loadTasks();
+			showAlert("Task marked as completed.");
 		} catch (error) {
 			target.checked = false;
 		}
@@ -278,14 +287,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		completedList.addEventListener("click", handleDelete);
 	}
 
-	if (togglePanel && testPanel) {
-		togglePanel.addEventListener("click", () => {
-			testPanel.classList.toggle("hidden");
-			testPanel.setAttribute(
-				"aria-hidden",
-				testPanel.classList.contains("hidden") ? "true" : "false"
-			);
-		});
+	if (testPanel) {
+		testPanel.classList.add("hidden");
+		testPanel.setAttribute("aria-hidden", "true");
 	}
 
 	if (form) {
@@ -333,6 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					resultBox.textContent = text || "Created.";
 				}
 				await loadTasks();
+				showAlert("Task created successfully.");
 			} catch (error) {
 				if (resultBox) {
 					resultBox.textContent = `Request failed: ${error}`;
