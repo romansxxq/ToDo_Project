@@ -36,10 +36,12 @@ public class TaskRepository : ITaskRepository
 
     public async Task UpdateTaskAsync(TaskItem task)
     {
-        if (_context.Entry(task).State == EntityState.Detached)
+        var tracked = _context.Tasks.Local.FirstOrDefault(t => t.Id == task.Id);
+        if (tracked != null && tracked != task)
         {
-            _context.Tasks.Update(task);
+            _context.Entry(tracked).State = EntityState.Detached;
         }
+        _context.Tasks.Update(task);
         await _context.SaveChangesAsync();
     }
 
