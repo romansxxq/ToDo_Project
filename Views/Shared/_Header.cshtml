@@ -1,0 +1,22 @@
+@{
+    var pageTitle = ViewData["Title"]?.ToString() ?? "Dashboard";
+}
+<header class="h-16 border-b border-border bg-card flex items-center justify-between px-6 lg:px-8 shrink-0">
+    <div class="flex items-center gap-4">
+        <button onclick="toggleMobileNav()" class="md:hidden p-1.5 rounded-md hover:bg-secondary transition-colors">
+            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path d="M3 12h18M3 6h18M3 18h18" />
+            </svg>
+        </button>
+        <div class="text-sm text-muted-foreground">
+            Workspace / <span class="text-foreground font-medium">@pageTitle</span>
+        </div>
+    </div>
+    <a href="/Tasks/Create"
+       class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-all active:scale-[0.98] shadow-sm gap-1.5">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+        Create Task
+    </a>
+</header>

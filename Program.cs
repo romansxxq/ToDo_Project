@@ -26,7 +26,7 @@ var botToken = builder.Configuration["BotSettings:Token"]
 
 builder.Services.AddSingleton(new TelegramBotService(botToken));
 builder.Services.AddSingleton<ILogService, LogService>();
-builder.Services.AddSingleton<AnalyticsService>();
+builder.Services.AddScoped<AnalyticsService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<TaskService>();

@@ -3,45 +3,77 @@
 @{
     ViewData["Title"] = "Task Details";
     ViewData["BodyClass"] = "tasks";
+    var statusClass = Model.Status switch
+    {
+        Models.Domain.Enums.TaskStatus.Completed => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        Models.Domain.Enums.TaskStatus.Overdue => "bg-red-50 text-red-700 border-red-200",
+        _ => "bg-amber-50 text-amber-700 border-amber-200"
+    };
+    var priorityClass = Model.Priority switch
+    {
+        Models.Domain.Enums.TypePriority.High => "bg-red-50 text-red-700 border-red-200",
+        Models.Domain.Enums.TypePriority.Medium => "bg-amber-50 text-amber-700 border-amber-200",
+        _ => "bg-emerald-50 text-emerald-700 border-emerald-200"
+    };
 }
 
-<div class="tasks-page">
-    <section class="hero hero-compact">
-        <div class="hero-overlay"></div>
-        <div class="hero-inner">
-            <div class="hero-title">Task Details</div>
-            <div class="hero-subtitle">@Model.Title</div>
-        </div>
-    </section>
+<div class="space-y-6">
+    <a class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground" asp-action="Index">
+        <span aria-hidden="true">&#8592;</span>
+        Back to list
+    </a>
 
-    <section class="todo-shell tasks-shell">
-        <div class="form-card">
-            <dl class="row mb-0">
-                <dt class="col-sm-3">Title</dt>
-                <dd class="col-sm-9">@Model.Title</dd>
+    <section class="max-w-3xl mx-auto w-full">
+        <div class="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-border flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-semibold text-card-foreground">@Model.Title</h1>
+                    <p class="text-xs text-muted-foreground">Task #@Model.Id</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-border rounded-md hover:bg-secondary transition-all" asp-action="Edit" asp-route-id="@Model.Id">
+                        Edit
+                    </a>
+                </div>
+            </div>
 
-                <dt class="col-sm-3">Description</dt>
-                <dd class="col-sm-9">@Model.Description</dd>
+            <div class="px-6 py-6 space-y-6">
+                <div>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</h3>
+                    <p class="text-sm text-card-foreground mt-2">@Model.Description</p>
+                </div>
 
-                <dt class="col-sm-3">Due date (GMT+2)</dt>
-                <dd class="col-sm-9">@DateTime.SpecifyKind(Model.DueDate, DateTimeKind.Utc).AddHours(2).ToString("yyyy-MM-dd HH:mm")</dd>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-border">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Due Date</p>
+                        <p class="text-sm font-medium text-card-foreground mt-2">
+                            @DateTime.SpecifyKind(Model.DueDate, DateTimeKind.Utc).AddHours(2).ToString("dddd, MMMM d, yyyy")
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Priority</p>
+                        <span class="mt-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border @priorityClass">
+                            @Model.Priority
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</p>
+                        <span class="mt-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border @statusClass">
+                            @Model.Status
+                        </span>
+                    </div>
+                </div>
 
-                <dt class="col-sm-3">Status</dt>
-                <dd class="col-sm-9">@Model.Status</dd>
-
-                <dt class="col-sm-3">Priority</dt>
-                <dd class="col-sm-9">@Model.Priority</dd>
-
-                <dt class="col-sm-3">Repetition</dt>
-                <dd class="col-sm-9">@Model.RepetitionType</dd>
-
-                <dt class="col-sm-3">Telegram Chat ID</dt>
-                <dd class="col-sm-9">@Model.TelegramChatId</dd>
-            </dl>
-
-            <div class="mt-3 d-flex gap-2">
-                <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
-                <a class="btn btn-outline-secondary" asp-action="Index">Back to list</a>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-border">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Repetition</p>
+                        <p class="text-sm font-medium text-card-foreground mt-2">@Model.RepetitionType</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Telegram Chat ID</p>
+                        <p class="text-sm font-medium text-card-foreground mt-2">@Model.TelegramChatId</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>

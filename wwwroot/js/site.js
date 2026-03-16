@@ -8,13 +8,18 @@ document.addEventListener("DOMContentLoaded", () => {
 	const dueInput = document.getElementById("todo-due");
 	const taskList = document.getElementById("task-list");
 	const completedList = document.getElementById("completed-list");
+	const totalCount = document.getElementById("analytics-total");
 	const completedCount = document.getElementById("analytics-completed");
+	const pendingCount = document.getElementById("analytics-pending");
 	const overdueCount = document.getElementById("analytics-overdue");
+	const taskCount = document.getElementById("task-count");
 	const tabs = document.querySelectorAll(".tab");
 	const testPanel = document.getElementById("test-panel");
 	const globalChatId = document.getElementById("global-chat-id");
 	const createChatId = document.getElementById("create-chat-id");
 	const chatIdHint = document.getElementById("chat-id-hint");
+	const priorityFilter = document.getElementById("priority-filter");
+	const searchInput = document.getElementById("task-search");
 
 	if (dueInput && !dueInput.value) {
 		const now = new Date();
@@ -49,7 +54,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	const state = {
-		filter: "today",
+		filter: "all",
+		priority: "all",
+		search: "",
 		tasks: []
 	};
 
@@ -96,6 +103,31 @@ document.addEventListener("DOMContentLoaded", () => {
 		return 0;
 	};
 
+	const getStatusLabel = (status) => {
+		if (typeof status === "string") {
+			return status;
+		}
+		switch (getStatusValue(status)) {
+			case 1:
+				return "Completed";
+			case 2:
+				return "Overdue";
+			default:
+				return "Pending";
+		}
+	};
+
+	const getPriorityLabel = (priority) => {
+		switch (priority) {
+			case 2:
+				return "High";
+			case 1:
+				return "Medium";
+			default:
+				return "Low";
+		}
+	};
+
 	const isCompleted = (task) => getStatusValue(task.status) === 1;
 
 	const isOverdue = (task) => {
@@ -109,25 +141,41 @@ document.addEventListener("DOMContentLoaded", () => {
 		return due < new Date();
 	};
 
-	const filterTasks = (task) => {
-		const due = new Date(task.dueDate);
-		if (state.filter === "today") {
-			return !isCompleted(task) && isSameDay(due, new Date());
+	const matchesFilters = (task) => {
+		if (state.priority !== "all") {
+			const priorityLabel = getPriorityLabel(task.priority).toLowerCase();
+			if (priorityLabel !== state.priority) {
+				return false;
+			}
 		}
-		if (state.filter === "overdue") {
-			return isOverdue(task);
+		if (state.search) {
+			const haystack = `${task.title || ""} ${task.description || ""}`.toLowerCase();
+			if (!haystack.includes(state.search)) {
+				return false;
+			}
 		}
-		return !isCompleted(task) && !isOverdue(task);
+		return true;
 	};
 
 	const priorityClass = (priority) => {
 		switch (priority) {
 			case 2:
-				return "pill-high";
+				return "bg-red-50 text-red-700 border-red-200";
 			case 1:
-				return "pill-medium";
+				return "bg-amber-50 text-amber-700 border-amber-200";
 			default:
-				return "pill-low";
+				return "bg-emerald-50 text-emerald-700 border-emerald-200";
+		}
+	};
+
+	const statusClass = (status) => {
+		switch (getStatusLabel(status)) {
+			case "Completed":
+				return "bg-emerald-50 text-emerald-700 border-emerald-200";
+			case "Overdue":
+				return "bg-red-50 text-red-700 border-red-200";
+			default:
+				return "bg-amber-50 text-amber-700 border-amber-200";
 		}
 	};
 
@@ -135,7 +183,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (!target) {
 			return;
 		}
-		target.innerHTML = `<div class="task-empty">${message}</div>`;
+		target.innerHTML = `
+			<tr>
+				<td colspan="5" class="px-6 py-10 text-center text-sm text-muted-foreground">
+					${message}
+				</td>
+			</tr>`;
 	};
 
 	const renderTasks = () => {
@@ -143,8 +196,22 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		const activeTasks = state.tasks.filter(filterTasks);
-		const doneTasks = state.tasks.filter(isCompleted);
+		const activeTasks = state.tasks.filter((task) => {
+			if (isCompleted(task)) {
+				return false;
+			}
+			if (state.filter === "completed") {
+				return false;
+			}
+			if (state.filter === "overdue" && !isOverdue(task)) {
+				return false;
+			}
+			if (state.filter === "pending" && isOverdue(task)) {
+				return false;
+			}
+			return matchesFilters(task);
+		});
+		const doneTasks = state.tasks.filter((task) => isCompleted(task) && matchesFilters(task));
 
 		if (activeTasks.length === 0) {
 			renderEmpty(taskList, "No tasks for this view yet.");
@@ -152,20 +219,31 @@ document.addEventListener("DOMContentLoaded", () => {
 				taskList.innerHTML = activeTasks
 					.map(
 						(task) => `
-						<div class="task-card ${isCompleted(task) ? "task-card-completed" : ""}">
-							<input class="task-check" type="checkbox" data-id="${task.id}" ${isCompleted(task) ? "checked" : ""} />
-							<div>
-								<div class="task-title">${task.title}</div>
-								<div class="task-meta">${formatDate(task.dueDate)}</div>
-							</div>
-							<div class="task-meta">${task.description || ""}</div>
-							<div class="task-actions">
-								<a class="task-link" href="/Tasks/Details/${task.id}">Details</a>
-								<a class="task-link" href="/Tasks/Edit/${task.id}">Edit</a>
-								<button class="task-delete" type="button" data-id="${task.id}">Delete</button>
-							</div>
-							<div class="task-pill ${priorityClass(task.priority)}"></div>
-						</div>`
+						<tr class="hover:bg-background transition-colors">
+							<td class="px-6 py-4">
+								<div class="flex items-center gap-3">
+									<input class="task-check" type="checkbox" data-id="${task.id}" ${isCompleted(task) ? "checked" : ""} ${isCompleted(task) ? "disabled" : ""} />
+									<div class="min-w-0">
+										<div class="text-sm font-semibold text-card-foreground truncate">${task.title}</div>
+										<div class="text-xs text-muted-foreground truncate">${task.description || ""}</div>
+									</div>
+								</div>
+							</td>
+							<td class="px-6 py-4 text-sm tabular-nums text-muted-foreground hidden md:table-cell">${formatDate(task.dueDate)}</td>
+							<td class="px-6 py-4 hidden sm:table-cell">
+								<span class="px-2 py-0.5 rounded text-xs font-medium border ${priorityClass(task.priority)}">${getPriorityLabel(task.priority)}</span>
+							</td>
+							<td class="px-6 py-4 hidden sm:table-cell">
+								<span class="px-2 py-0.5 rounded text-xs font-medium border ${statusClass(task.status)}">${getStatusLabel(task.status)}</span>
+							</td>
+							<td class="px-6 py-4 text-right">
+								<div class="flex items-center justify-end gap-2 text-xs">
+									<a class="text-primary hover:underline" href="/Tasks/Details/${task.id}">View</a>
+									<a class="text-primary hover:underline" href="/Tasks/Edit/${task.id}">Edit</a>
+									<button class="task-delete text-destructive" type="button" data-id="${task.id}">Delete</button>
+								</div>
+							</td>
+						</tr>`
 					)
 					.join("");
 		}
@@ -176,29 +254,56 @@ document.addEventListener("DOMContentLoaded", () => {
 			completedList.innerHTML = doneTasks
 				.map(
 					(task) => `
-					<div class="task-card task-card-completed">
-						<input class="task-check" type="checkbox" checked disabled />
-						<div>
-							<div class="task-title">${task.title}</div>
-							<div class="task-meta">${formatDate(task.dueDate)}</div>
-						</div>
-						<div class="task-meta">${task.description || ""}</div>
-						<div class="task-actions">
-							<a class="task-link" href="/Tasks/Details/${task.id}">Details</a>
-							<a class="task-link" href="/Tasks/Edit/${task.id}">Edit</a>
-							<button class="task-delete" type="button" data-id="${task.id}">Delete</button>
-						</div>
-						<div class="task-pill ${priorityClass(task.priority)}"></div>
-					</div>`
+					<tr class="hover:bg-background transition-colors">
+						<td class="px-6 py-4">
+							<div class="flex items-center gap-3">
+								<input class="task-check" type="checkbox" checked disabled />
+								<div class="min-w-0">
+									<div class="text-sm font-semibold text-card-foreground line-through truncate">${task.title}</div>
+									<div class="text-xs text-muted-foreground truncate">${task.description || ""}</div>
+								</div>
+							</div>
+						</td>
+						<td class="px-6 py-4 text-sm tabular-nums text-muted-foreground hidden md:table-cell">${formatDate(task.dueDate)}</td>
+						<td class="px-6 py-4 hidden sm:table-cell">
+							<span class="px-2 py-0.5 rounded text-xs font-medium border ${priorityClass(task.priority)}">${getPriorityLabel(task.priority)}</span>
+						</td>
+						<td class="px-6 py-4 hidden sm:table-cell">
+							<span class="px-2 py-0.5 rounded text-xs font-medium border ${statusClass("Completed")}">Completed</span>
+						</td>
+						<td class="px-6 py-4 text-right">
+							<div class="flex items-center justify-end gap-2 text-xs">
+								<a class="text-primary hover:underline" href="/Tasks/Details/${task.id}">View</a>
+								<a class="text-primary hover:underline" href="/Tasks/Edit/${task.id}">Edit</a>
+								<button class="task-delete text-destructive" type="button" data-id="${task.id}">Delete</button>
+							</div>
+						</td>
+					</tr>`
 				)
 				.join("");
 		}
 
+		if (taskCount) {
+			taskCount.textContent = activeTasks.length;
+		}
+		updateAnalyticsFromTasks();
+	};
+
+	const updateAnalyticsFromTasks = () => {
+		const completed = state.tasks.filter(isCompleted).length;
+		const overdue = state.tasks.filter(isOverdue).length;
+		const pending = state.tasks.length - completed - overdue;
+		if (totalCount) {
+			totalCount.textContent = state.tasks.length;
+		}
 		if (completedCount) {
-			completedCount.textContent = doneTasks.length;
+			completedCount.textContent = completed;
+		}
+		if (pendingCount) {
+			pendingCount.textContent = pending;
 		}
 		if (overdueCount) {
-			overdueCount.textContent = state.tasks.filter(isOverdue).length;
+			overdueCount.textContent = overdue;
 		}
 	};
 
@@ -274,6 +379,20 @@ document.addEventListener("DOMContentLoaded", () => {
 				state.filter = tab.dataset.filter;
 				renderTasks();
 			});
+		});
+	}
+
+	if (priorityFilter) {
+		priorityFilter.addEventListener("change", () => {
+			state.priority = priorityFilter.value;
+			renderTasks();
+		});
+	}
+
+	if (searchInput) {
+		searchInput.addEventListener("input", () => {
+			state.search = searchInput.value.trim().toLowerCase();
+			renderTasks();
 		});
 	}
 
